@@ -91,7 +91,7 @@ def train_epoch(train_loader, model, optimizer, train_meter, cur_epoch, cfg):
             # Update and log stats.
             train_meter.update_stats(None, None, None, loss, lr)
         else:
-            top1_err, top5_err = None, None
+            top1_err, top5_err = None, -1
             if cfg.DATA.MULTI_LABEL:
                 # Gather all the predictions across all the devices.
                 if cfg.NUM_GPUS > 1:
@@ -99,22 +99,22 @@ def train_epoch(train_loader, model, optimizer, train_meter, cur_epoch, cfg):
                 loss = loss.item()
             else:
                 # Compute the errors.
-                num_topks_correct = metrics.topks_correct(preds, labels, (1, 5))
-                top1_err, top5_err = [
+                num_topks_correct = metrics.topks_correct(preds, labels, (1,))
+                top1_err = [
                     (1.0 - x / preds.size(0)) * 100.0 for x in num_topks_correct
                 ]
+                top1_err = top1_err[0]
 
                 # Gather all the predictions across all the devices.
                 if cfg.NUM_GPUS > 1:
-                    loss, top1_err, top5_err = du.all_reduce(
-                        [loss, top1_err, top5_err]
+                    loss, top1_err = du.all_reduce(
+                        [loss, top1_err]
                     )
 
                 # Copy the stats from GPU to CPU (sync point).
-                loss, top1_err, top5_err = (
+                loss, top1_err = (
                     loss.item(),
-                    top1_err.item(),
-                    top5_err.item(),
+                    top1_err.item()
                 )
 
             train_meter.iter_toc()
@@ -187,18 +187,20 @@ def eval_epoch(val_loader, model, val_meter, cur_epoch, cfg):
                     preds, labels = du.all_gather([preds, labels])
                 val_meter.update_predictions(preds, labels)
             else:
+                top1_err, top5_err = None, -1
                 # Compute the errors.
-                num_topks_correct = metrics.topks_correct(preds, labels, (1, 5))
+                num_topks_correct = metrics.topks_correct(preds, labels, (1,))
 
                 # Combine the errors across the GPUs.
-                top1_err, top5_err = [
+                top1_err = [
                     (1.0 - x / preds.size(0)) * 100.0 for x in num_topks_correct
                 ]
+                top1_err = top1_err[0]
                 if cfg.NUM_GPUS > 1:
-                    top1_err, top5_err = du.all_reduce([top1_err, top5_err])
+                    top1_err = du.all_reduce([top1_err])
 
                 # Copy the errors from GPU to CPU (sync point).
-                top1_err, top5_err = top1_err.item(), top5_err.item()
+                top1_err = top1_err.item()
 
                 val_meter.iter_toc()
                 # Update and log stats.

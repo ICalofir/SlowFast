@@ -101,7 +101,10 @@ def perform_test(test_loader, model, test_meter, cfg):
         test_meter.iter_tic()
 
     # Log epoch stats and print the final testing results.
-    test_meter.finalize_metrics()
+    if isinstance(test_meter, TestMeter):
+        test_meter.finalize_metrics(ks=(1,))
+    else:
+        test_meter.finalize_metrics()
     test_meter.reset()
 
 
