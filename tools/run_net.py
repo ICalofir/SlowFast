@@ -2,14 +2,13 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 """Wrapper to train and test a video classification model."""
-
-import torch
-
-import slowfast.utils.multiprocessing as mpu
+from slowfast.utils.misc import launch_job
 from slowfast.utils.parser import load_config, parse_args
 
+from demo_net import demo
 from test_net import test
 from train_net import train
+from visualization import visualize
 
 
 def main():
@@ -21,45 +20,18 @@ def main():
 
     # Perform training.
     if cfg.TRAIN.ENABLE:
-        if cfg.NUM_GPUS > 1:
-            torch.multiprocessing.spawn(
-                mpu.run,
-                nprocs=cfg.NUM_GPUS,
-                args=(
-                    cfg.NUM_GPUS,
-                    train,
-                    args.init_method,
-                    cfg.SHARD_ID,
-                    cfg.NUM_SHARDS,
-                    cfg.DIST_BACKEND,
-                    cfg,
-                ),
-                daemon=False,
-            )
-        else:
-            train(cfg=cfg)
+        launch_job(cfg=cfg, init_method=args.init_method, func=train)
 
     # Perform multi-clip testing.
     if cfg.TEST.ENABLE:
-        if cfg.NUM_GPUS > 1:
-            torch.multiprocessing.spawn(
-                mpu.run,
-                nprocs=cfg.NUM_GPUS,
-                args=(
-                    cfg.NUM_GPUS,
-                    test,
-                    args.init_method,
-                    cfg.SHARD_ID,
-                    cfg.NUM_SHARDS,
-                    cfg.DIST_BACKEND,
-                    cfg,
-                ),
-                daemon=False,
-            )
-        else:
-            test(cfg=cfg)
+        launch_job(cfg=cfg, init_method=args.init_method, func=test)
+
+    if cfg.DEMO.ENABLE:
+        launch_job(cfg=cfg, init_method=args.init_method, func=demo)
+
+    if cfg.TENSORBOARD.ENABLE and cfg.TENSORBOARD.MODEL_VIS.ENABLE:
+        launch_job(cfg=cfg, init_method=args.init_method, func=visualize)
 
 
 if __name__ == "__main__":
-    torch.multiprocessing.set_start_method("forkserver")
     main()

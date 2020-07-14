@@ -17,12 +17,6 @@ _C = CfgNode()
 # ---------------------------------------------------------------------------- #
 _C.BN = CfgNode()
 
-# BN epsilon.
-_C.BN.EPSILON = 1e-5
-
-# BN momentum.
-_C.BN.MOMENTUM = 0.1
-
 # Precise BN stats.
 _C.BN.USE_PRECISE_STATS = False
 
@@ -35,7 +29,7 @@ _C.BN.WEIGHT_DECAY = 0.0
 # Norm type, options include `batchnorm`, `sub_batchnorm`, `sync_batchnorm`
 _C.BN.NORM_TYPE = "batchnorm"
 
-# Parameter for SplitBatchNorm, where it splits the batch dimension into
+# Parameter for SubBatchNorm, where it splits the batch dimension into
 # NUM_SPLITS splits, and run BN on each of them separately independently.
 _C.BN.NUM_SPLITS = 1
 
@@ -75,6 +69,7 @@ _C.TRAIN.CHECKPOINT_TYPE = "pytorch"
 
 # If True, perform inflation when loading checkpoint.
 _C.TRAIN.CHECKPOINT_INFLATE = False
+
 
 # ---------------------------------------------------------------------------- #
 # Testing options
@@ -230,6 +225,9 @@ _C.DATA = CfgNode()
 
 # The path to the data directory.
 _C.DATA.PATH_TO_DATA_DIR = ""
+
+# The separator used between path and label.
+_C.DATA.PATH_LABEL_SEPARATOR = " "
 
 # Video path prefix if any.
 _C.DATA.PATH_PREFIX = ""
@@ -489,8 +487,130 @@ _C.AVA.GROUNDTRUTH_FILE = "ava_val_v2.2.csv"
 # Backend to process image, includes `pytorch` and `cv2`.
 _C.AVA.IMG_PROC_BACKEND = "cv2"
 
+# ---------------------------------------------------------------------------- #
+# Multigrid training options
+# See https://arxiv.org/abs/1912.00998 for details about multigrid training.
+# ---------------------------------------------------------------------------- #
+_C.MULTIGRID = CfgNode()
+
+# Multigrid training allows us to train for more epochs with fewer iterations.
+# This hyperparameter specifies how many times more epochs to train.
+# The default setting in paper trains for 1.5x more epochs than baseline.
+_C.MULTIGRID.EPOCH_FACTOR = 1.5
+
+# Enable short cycles.
+_C.MULTIGRID.SHORT_CYCLE = False
+# Short cycle additional spatial dimensions relative to the default crop size.
+_C.MULTIGRID.SHORT_CYCLE_FACTORS = [0.5, 0.5 ** 0.5]
+
+_C.MULTIGRID.LONG_CYCLE = False
+# (Temporal, Spatial) dimensions relative to the default shape.
+_C.MULTIGRID.LONG_CYCLE_FACTORS = [
+    (0.25, 0.5 ** 0.5),
+    (0.5, 0.5 ** 0.5),
+    (0.5, 1),
+    (1, 1),
+]
+
+# While a standard BN computes stats across all examples in a GPU,
+# for multigrid training we fix the number of clips to compute BN stats on.
+# See https://arxiv.org/abs/1912.00998 for details.
+_C.MULTIGRID.BN_BASE_SIZE = 8
+
+# Multigrid training epochs are not proportional to actual training time or
+# computations, so _C.TRAIN.EVAL_PERIOD leads to too frequent or rare
+# evaluation. We use a multigrid-specific rule to determine when to evaluate:
+# This hyperparameter defines how many times to evaluate a model per long
+# cycle shape.
+_C.MULTIGRID.EVAL_FREQ = 3
+
+# No need to specify; Set automatically and used as global variables.
+_C.MULTIGRID.LONG_CYCLE_SAMPLING_RATE = 0
+_C.MULTIGRID.DEFAULT_B = 0
+_C.MULTIGRID.DEFAULT_T = 0
+_C.MULTIGRID.DEFAULT_S = 0
+
+# -----------------------------------------------------------------------------
+# Tensorboard Visualization Options
+# -----------------------------------------------------------------------------
+_C.TENSORBOARD = CfgNode()
+
+# Log to summary writer, this will automatically.
+# log loss, lr and metrics during train/eval.
+_C.TENSORBOARD.ENABLE = False
+
+# Path to directory for tensorboard logs.
+# Default to to cfg.OUTPUT_DIR/runs-{cfg.TRAIN.DATASET}.
+_C.TENSORBOARD.LOG_DIR = ""
+# Path to a json file providing class_name - id mapping
+# in the format {"class_name1": id1, "class_name2": id2, ...}.
+# This file must be provided to enable plotting confusion matrix
+# by a subset or parent categories.
+_C.TENSORBOARD.CLASS_NAMES_PATH = ""
+
+# Path to a json file for categories -> classes mapping
+# in the format {"parent_class": ["child_class1", "child_class2",...], ...}.
+_C.TENSORBOARD.CATEGORIES_PATH = ""
+
+# Config for confusion matrices visualization.
+_C.TENSORBOARD.CONFUSION_MATRIX = CfgNode()
+# Visualize confusion matrix.
+_C.TENSORBOARD.CONFUSION_MATRIX.ENABLE = False
+# Figure size of the confusion matrices plotted.
+_C.TENSORBOARD.CONFUSION_MATRIX.FIGSIZE = [8, 8]
+# Path to a subset of categories to visualize.
+# File contains class names separated by newline characters.
+_C.TENSORBOARD.CONFUSION_MATRIX.SUBSET_PATH = ""
+
+# Config for histogram visualization.
+_C.TENSORBOARD.HISTOGRAM = CfgNode()
+# Visualize histograms.
+_C.TENSORBOARD.HISTOGRAM.ENABLE = False
+# Path to a subset of classes to plot histograms.
+# Class names must be separated by newline characters.
+_C.TENSORBOARD.HISTOGRAM.SUBSET_PATH = ""
+# Visualize top-k most predicted classes on histograms for each
+# chosen true label.
+_C.TENSORBOARD.HISTOGRAM.TOPK = 10
+# Figure size of the histograms plotted.
+_C.TENSORBOARD.HISTOGRAM.FIGSIZE = [8, 8]
+
+# ---------------------------------------------------------------------------- #
+# Model Visualization options
+# ---------------------------------------------------------------------------- #
+
+# Config for layers' weights and activations visualization.
+# _C.TENSORBOARD.ENABLE must be True.
+_C.TENSORBOARD.MODEL_VIS = CfgNode()
+
+# If False, skip model visualization.
+_C.TENSORBOARD.MODEL_VIS.ENABLE = False
+
+
 # Add custom config with default values.
 custom_config.add_custom_config(_C)
+
+
+# ---------------------------------------------------------------------------- #
+# Demo options
+# ---------------------------------------------------------------------------- #
+_C.DEMO = CfgNode()
+
+_C.DEMO.ENABLE = False
+
+_C.DEMO.LABEL_FILE_PATH = ""
+
+_C.DEMO.DATA_SOURCE = 0
+
+_C.DEMO.DISPLAY_WIDTH = 0
+
+_C.DEMO.DISPLAY_HEIGHT = 0
+
+_C.DEMO.DETECTRON2_OBJECT_DETECTION_MODEL_CFG = ""
+
+_C.DEMO.DETECTRON2_OBJECT_DETECTION_MODEL_WEIGHTS = ""
+
+_C.DEMO.OUTPUT_FILE = ""
 
 
 def _assert_and_infer_cfg(cfg):
