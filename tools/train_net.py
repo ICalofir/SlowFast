@@ -73,7 +73,8 @@ def train_epoch(
             # Perform the forward pass.
             preds = model(inputs)
         # Explicitly declare reduction to mean.
-        loss_fun = losses.get_loss_func(cfg.MODEL.LOSS_FUNC)(reduction="mean")
+        class_weights = torch.FloatTensor(cfg.CUSTOM_CONFIG.WEIGHT).cuda()
+        loss_fun = losses.get_loss_func(cfg.MODEL.LOSS_FUNC)(reduction="mean", weight=class_weights)
 
         # Compute the loss.
         loss = loss_fun(preds, labels)
