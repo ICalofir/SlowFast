@@ -108,14 +108,7 @@ def perform_test(test_loader, model, test_meter, cfg, writer=None):
         test_meter.iter_tic()
     # Log epoch stats and print the final testing results.
     if writer is not None and not cfg.DETECTION.ENABLE:
-        all_preds = [pred.clone().detach() for pred in test_meter.video_preds]
-        all_labels = [
-            label.clone().detach() for label in test_meter.video_labels
-        ]
-        if cfg.NUM_GPUS:
-            all_preds = [pred.cpu() for pred in all_preds]
-            all_labels = [label.cpu() for label in all_labels]
-        writer.plot_eval(preds=all_preds, labels=all_labels)
+        writer.plot_eval(preds=test_meter.video_preds.clone(), labels=test_meter.video_labels.clone())
 
     test_meter.finalize_metrics(ks=(1,))
     test_meter.reset()
