@@ -10,3 +10,4 @@ def add_custom_config(_C):
     _C.CUSTOM_CONFIG = CfgNode()
 
     _C.CUSTOM_CONFIG.WEIGHT = _C.MODEL.NUM_CLASSES * [1.]
+    _C.CUSTOM_CONFIG.TASK = 'video_recognition'

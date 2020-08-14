@@ -20,6 +20,8 @@ from slowfast.models import build_model
 from slowfast.utils.meters import AVAMeter, TrainMeter, ValMeter
 from slowfast.utils.multigrid import MultigridSchedule
 
+import slowfast.utils.football as football
+
 logger = logging.get_logger(__name__)
 
 
@@ -278,6 +280,14 @@ def eval_epoch(val_loader, model, val_meter, cur_epoch, cfg, writer=None):
             writer.plot_eval(
                 preds=all_preds, labels=all_labels, global_step=cur_epoch
             )
+
+            if cfg.CUSTOM_CONFIG.TASK == 'expected_goals':
+                xG, goals = football.get_xG_and_goals(preds=all_preds, labels=all_labels)
+                writer.add_scalars(
+                    {"Val/xG (Expected Goals)": xG,
+                     "Val/AG (Goals)": goals},
+                    global_step=cur_epoch,
+                )
 
     val_meter.reset()
 

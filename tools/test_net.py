@@ -15,6 +15,8 @@ from slowfast.datasets import loader
 from slowfast.models import build_model
 from slowfast.utils.meters import AVAMeter, TestMeter
 
+import slowfast.utils.football as football
+
 logger = logging.get_logger(__name__)
 
 
@@ -109,6 +111,15 @@ def perform_test(test_loader, model, test_meter, cfg, writer=None):
     # Log epoch stats and print the final testing results.
     if writer is not None and not cfg.DETECTION.ENABLE:
         writer.plot_eval(preds=test_meter.video_preds.clone(), labels=test_meter.video_labels.clone())
+
+        if cfg.CUSTOM_CONFIG.TASK == 'expected_goals':
+            xG, goals = football.get_xG_and_goals(preds=test_meter.video_preds.clone(),
+                                                  labels=test_meter.video_labels.clone())
+            writer.add_scalars(
+                {"Test/xG (Expected Goals)": xG,
+                 "Test/AG (Goals)": goals},
+                global_step=cur_epoch,
+            )
 
     test_meter.finalize_metrics(ks=(1,))
     test_meter.reset()
