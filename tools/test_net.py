@@ -4,7 +4,10 @@
 """Multi-view test a video classification model."""
 
 import numpy as np
+import os
+import pickle
 import torch
+from fvcore.common.file_io import PathManager
 
 import slowfast.utils.checkpoint as cu
 import slowfast.utils.distributed as du
@@ -100,6 +103,7 @@ def perform_test(test_loader, model, test_meter, cfg, writer=None):
                 preds = preds.cpu()
                 labels = labels.cpu()
                 video_idx = video_idx.cpu()
+
             test_meter.iter_toc()
             # Update and log stats.
             test_meter.update_stats(
@@ -108,17 +112,33 @@ def perform_test(test_loader, model, test_meter, cfg, writer=None):
             test_meter.log_iter_stats(cur_iter)
 
         test_meter.iter_tic()
-    # Log epoch stats and print the final testing results.
-    if writer is not None and not cfg.DETECTION.ENABLE:
-        writer.plot_eval(preds=test_meter.video_preds.clone(), labels=test_meter.video_labels.clone())
 
-        if cfg.CUSTOM_CONFIG.TASK == 'expected_goals':
-            xG, goals = football.get_xG_and_goals(preds=test_meter.video_preds.clone(),
-                                                  labels=test_meter.video_labels.clone())
-            writer.add_scalars(
-                {"Test/xG (Expected Goals)": xG,
-                 "Test/AG (Goals)": goals},
-                global_step=cur_epoch,
+    # Log epoch stats and print the final testing results.
+    if not cfg.DETECTION.ENABLE:
+        all_preds = test_meter.video_preds.clone().detach()
+        all_labels = test_meter.video_labels
+        if cfg.NUM_GPUS:
+            all_preds = all_preds.cpu()
+            all_labels = all_labels.cpu()
+        if writer is not None:
+            writer.plot_eval(preds=all_preds, labels=all_labels)
+
+            if cfg.CUSTOM_CONFIG.TASK == 'expected_goals':
+                xG, goals = football.get_xG_and_goals(preds=all_preds,
+                                                      labels=all_labels)
+                writer.add_scalars(
+                    {"Test/xG (Expected Goals)": xG,
+                     "Test/AG (Goals)": goals},
+                    global_step=cur_epoch,
+
+        if cfg.TEST.SAVE_RESULTS_PATH != "":
+            save_path = os.path.join(cfg.OUTPUT_DIR, cfg.TEST.SAVE_RESULTS_PATH)
+
+            with PathManager.open(save_path, "wb") as f:
+                pickle.dump([all_labels, all_labels], f)
+
+            logger.info(
+                "Successfully saved prediction results to {}".format(save_path)
             )
 
     test_meter.finalize_metrics(ks=(1,))
