@@ -20,6 +20,8 @@ from slowfast.utils.meters import AVAMeter, TestMeter
 
 import slowfast.utils.football as football
 
+import json
+
 logger = logging.get_logger(__name__)
 
 
@@ -146,6 +148,79 @@ def perform_test(test_loader, model, test_meter, cfg, writer=None):
     test_meter.reset()
 
 
+@torch.no_grad()
+def perform_test_game(test_loader, model, test_meter, cfg, writer=None):
+    # Enable eval mode.
+    model.eval()
+    test_meter.iter_tic()
+
+    num_videos = len(test_loader.dataset) // (cfg.TEST.NUM_ENSEMBLE_VIEWS * cfg.TEST.NUM_SPATIAL_CROPS)
+    num_clips = cfg.TEST.NUM_ENSEMBLE_VIEWS * cfg.TEST.NUM_SPATIAL_CROPS
+    num_video_idx = num_videos * [0]
+
+    for cur_iter, (inputs, labels, video_idx, meta) in enumerate(test_loader):
+        for vid_idx in video_idx:
+            num_video_idx[vid_idx.item() // num_clips] += 1
+
+        if cfg.NUM_GPUS:
+            # Transfer the data to the current GPU device.
+            if isinstance(inputs, (list,)):
+                for i in range(len(inputs)):
+                    inputs[i] = inputs[i].cuda(non_blocking=True)
+            else:
+                inputs = inputs.cuda(non_blocking=True)
+
+            # Transfer the data to the current GPU device.
+            labels = labels.cuda()
+            video_idx = video_idx.cuda()
+            for key, val in meta.items():
+                if isinstance(val, (list,)):
+                    for i in range(len(val)):
+                        val[i] = val[i].cuda(non_blocking=True)
+                else:
+                    meta[key] = val.cuda(non_blocking=True)
+
+        # Perform the forward pass.
+        preds = model(inputs)
+
+        # Gather all the predictions across all the devices to perform ensemble.
+        if cfg.NUM_GPUS > 1:
+            preds, labels, video_idx = du.all_gather(
+                [preds, labels, video_idx]
+            )
+        if cfg.NUM_GPUS:
+            preds = preds.cpu()
+            labels = labels.cpu()
+            video_idx = video_idx.cpu()
+
+        test_meter.iter_toc()
+        # Update and log stats.
+        test_meter.update_stats(
+            preds.detach(), labels.detach(), video_idx.detach()
+        )
+        test_meter.log_iter_stats(cur_iter)
+
+        test_meter.iter_tic()
+
+    all_preds = test_meter.video_preds.clone().detach()
+    all_labels = test_meter.video_labels
+    if cfg.NUM_GPUS:
+        all_preds = all_preds.cpu()
+        all_labels = all_labels.cpu()
+
+    sliding_window_videos_predictions = {}
+    for idx, all_pred in enumerate(all_preds):
+        vid_name = test_loader.dataset._path_to_videos[idx * num_clips].split('/')[-1][:-4]
+        pred = all_pred.numpy() / num_video_idx[idx]
+
+        sliding_window_videos_predictions[vid_name] = pred.tolist()
+
+    with open(cfg.DATA.PATH_TO_DATA_DIR + '/sliding_window_videos_predictions.json', 'w') as f:
+        json.dump(sliding_window_videos_predictions, f)
+
+    test_meter.reset()
+
+
 def test(cfg):
     """
     Perform multi-view testing on the pretrained video model.
@@ -205,7 +280,10 @@ def test(cfg):
     else:
         writer = None
 
-    # # Perform multi-view test on the entire dataset.
-    perform_test(test_loader, model, test_meter, cfg, writer)
+    if cfg.CUSTOM_CONFIG.TEST_TASK == 'test':
+        # # Perform multi-view test on the entire dataset.
+        perform_test(test_loader, model, test_meter, cfg, writer)
+    elif cfg.CUSTOM_CONFIG.TEST_TASK == 'game':
+        perform_test_game(test_loader, model, test_meter, cfg, writer)
     if writer is not None:
         writer.close()

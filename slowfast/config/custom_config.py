@@ -11,3 +11,4 @@ def add_custom_config(_C):
 
     _C.CUSTOM_CONFIG.WEIGHT = _C.MODEL.NUM_CLASSES * [1.]
     _C.CUSTOM_CONFIG.TASK = 'video_recognition'
+    _C.CUSTOM_CONFIG.TEST_TASK = 'test'
