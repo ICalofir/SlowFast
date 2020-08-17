@@ -130,6 +130,7 @@ def perform_test(test_loader, model, test_meter, cfg, writer=None):
                     {"Test/xG (Expected Goals)": xG,
                      "Test/AG (Goals)": goals},
                     global_step=cur_epoch,
+                )
 
         if cfg.TEST.SAVE_RESULTS_PATH != "":
             save_path = os.path.join(cfg.OUTPUT_DIR, cfg.TEST.SAVE_RESULTS_PATH)
