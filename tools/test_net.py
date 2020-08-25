@@ -131,7 +131,7 @@ def perform_test(test_loader, model, test_meter, cfg, writer=None):
                 writer.add_scalars(
                     {"Test/xG (Expected Goals)": xG,
                      "Test/AG (Goals)": goals},
-                    global_step=cur_epoch,
+                    global_step=0,
                 )
 
         if cfg.TEST.SAVE_RESULTS_PATH != "":
