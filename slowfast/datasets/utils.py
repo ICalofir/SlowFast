@@ -139,13 +139,21 @@ def spatial_sampling(
     """
     assert spatial_idx in [-1, 0, 1, 2]
     if spatial_idx == -1:
-        frames, _ = transform.random_short_side_scale_jitter(
-            images=frames,
-            min_size=min_scale,
-            max_size=max_scale,
-            inverse_uniform_sampling=inverse_uniform_sampling,
-        )
-        frames, _ = transform.random_crop(frames, crop_size)
+        # frames, _ = transform.random_short_side_scale_jitter(
+        #     images=frames,
+        #     min_size=min_scale,
+        #     max_size=max_scale,
+        #     inverse_uniform_sampling=inverse_uniform_sampling,
+        # )
+        # frames, _ = transform.random_crop(frames, crop_size)
+
+        frames = torch.nn.functional.interpolate(
+                    frames,
+                    size=(224, 224),
+                    mode="bilinear",
+                    align_corners=False,
+                 )
+
         if random_horizontal_flip:
             frames, _ = transform.horizontal_flip(0.5, frames)
     else:
