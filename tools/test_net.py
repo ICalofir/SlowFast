@@ -211,7 +211,12 @@ def perform_test_game(test_loader, model, test_meter, cfg, writer=None):
     sliding_window_videos_predictions = {}
     for idx, all_pred in enumerate(all_preds):
         vid_name = test_loader.dataset._path_to_videos[idx * num_clips].split('/')[-1][:-4]
-        pred = all_pred.numpy() / num_video_idx[idx]
+
+        if num_video_idx[idx] == 0:
+            logger.info('Video {} has 0 predictions and it will be skipped.'.format(vid_name))
+            pred = np.array([-1., -1., -1.])
+        else:
+            pred = all_pred.numpy() / num_video_idx[idx]
 
         sliding_window_videos_predictions[vid_name] = pred.tolist()
 
