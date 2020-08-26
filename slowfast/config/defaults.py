@@ -613,7 +613,7 @@ _C.TENSORBOARD.MODEL_VIS.GRAD_CAM = CfgNode()
 _C.TENSORBOARD.MODEL_VIS.GRAD_CAM.ENABLE = True
 # CNN layers to use for Grad-CAM. The number of layers must be equal to
 # number of pathway(s).
-_C.TENSORBOARD.MODEL_VIS.GRAD_CAM.LAYER_LIST = []
+_C.TENSORBOARD.MODEL_VIS.GRAD_CAM.LAYER_LIST = ['s5/pathway0_res2']
 # If True, visualize Grad-CAM using true labels for each instances.
 # If False, use the highest predicted class.
 _C.TENSORBOARD.MODEL_VIS.GRAD_CAM.USE_TRUE_LABEL = False
