@@ -134,6 +134,16 @@ def perform_test(test_loader, model, test_meter, cfg, writer=None):
                     global_step=0,
                 )
 
+                figure, precision, recall, f1 = football.get_figure_metrics(preds=all_preds,
+                                                                            labels=all_labels)
+                writer.add_scalars(
+                    {'Test/precision': precision,
+                     'Test/recall': recall,
+                     'Test/f1': f1},
+                    global_step=0
+                )
+                writer.writer.add_figure(tag='Confusion Matrix Unnormalized', figure=figure, global_step=0)
+
         if cfg.TEST.SAVE_RESULTS_PATH != "":
             save_path = os.path.join(cfg.OUTPUT_DIR, cfg.TEST.SAVE_RESULTS_PATH)
 
