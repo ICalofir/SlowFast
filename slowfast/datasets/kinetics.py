@@ -166,10 +166,13 @@ class Kinetics(torch.utils.data.Dataset):
             # spatial_sample_index is in [0, 1, 2]. Corresponding to left,
             # center, or right if width is larger than height, and top, middle,
             # or bottom if height is larger than width.
-            spatial_sample_index = (
-                self._spatial_temporal_idx[index]
-                % self.cfg.TEST.NUM_SPATIAL_CROPS
-            )
+
+            # spatial_sample_index = (
+            #     self._spatial_temporal_idx[index]
+            #     % self.cfg.TEST.NUM_SPATIAL_CROPS
+            # )
+            spatial_sample_index = -1 # resize frames to 224x224
+
             min_scale, max_scale, crop_size = [self.cfg.DATA.TEST_CROP_SIZE] * 3
             # The testing is deterministic and no jitter should be performed.
             # min_scale, max_scale, and crop_size are expect to be the same.

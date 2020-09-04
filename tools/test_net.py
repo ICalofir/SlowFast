@@ -214,7 +214,7 @@ def perform_test_game(test_loader, model, test_meter, cfg, writer=None):
 
         if num_video_idx[idx] == 0:
             logger.info('Video {} has 0 predictions and it will be skipped.'.format(vid_name))
-            pred = np.array([-1., -1., -1.])
+            pred = np.array([-1.] * cfg.MODEL.NUM_CLASSES)
         else:
             pred = all_pred.numpy() / num_video_idx[idx]
 

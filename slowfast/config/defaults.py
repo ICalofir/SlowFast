@@ -90,11 +90,11 @@ _C.TEST.CHECKPOINT_FILE_PATH = ""
 
 # Number of clips to sample from a video uniformly for aggregating the
 # prediction results.
-_C.TEST.NUM_ENSEMBLE_VIEWS = 10
+_C.TEST.NUM_ENSEMBLE_VIEWS = 2
 
 # Number of crops to sample from a frame spatially for aggregating the
 # prediction results.
-_C.TEST.NUM_SPATIAL_CROPS = 3
+_C.TEST.NUM_SPATIAL_CROPS = 1
 
 # Checkpoint types include `caffe2` or `pytorch`.
 _C.TEST.CHECKPOINT_TYPE = "pytorch"
@@ -734,7 +734,7 @@ def _assert_and_infer_cfg(cfg):
     # TEST assertions.
     assert cfg.TEST.CHECKPOINT_TYPE in ["pytorch", "caffe2"]
     assert cfg.TEST.BATCH_SIZE % cfg.NUM_GPUS == 0
-    assert cfg.TEST.NUM_SPATIAL_CROPS == 3
+    # assert cfg.TEST.NUM_SPATIAL_CROPS == 3
 
     # RESNET assertions.
     assert cfg.RESNET.NUM_GROUPS > 0
