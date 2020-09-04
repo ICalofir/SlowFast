@@ -1,6 +1,6 @@
 import torch
 import slowfast.visualization.utils as vis_utils
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, average_precision_score, cohen_kappa_score
 
 def get_xG_and_goals(preds, labels):
     """
@@ -33,8 +33,9 @@ def get_figure_metrics(preds, labels):
     if isinstance(labels, list):
         labels = torch.cat(labels, dim=0)
 
-    preds = torch.argmax(preds, dim=1).cpu().detach().numpy().tolist()
-    labels = labels.cpu().detach().numpy().tolist()
+    preds_probs = torch.flatten(preds[:, 1]).cpu().detach().numpy().tolist()
+    preds = torch.flatten(torch.argmax(preds, dim=1)).cpu().detach().numpy().tolist()
+    labels = torch.flatten(labels).cpu().detach().numpy().tolist()
 
     cm = confusion_matrix(labels, preds)
     figure = vis_utils.plot_confusion_matrix(cm,
@@ -49,4 +50,8 @@ def get_figure_metrics(preds, labels):
     recall = tp / (tp + fn)
     f1 = 2 * ((precision * recall) / (precision + recall))
 
-    return figure, precision, recall, f1
+    auc_pr = average_precision_score(labels, preds_probs)
+    auc_pr_random = sum(labels) / len(labels)
+    cohen_kappa = cohen_kappa_score(labels, preds)
+
+    return figure, precision, recall, f1, auc_pr_random, auc_pr, cohen_kappa

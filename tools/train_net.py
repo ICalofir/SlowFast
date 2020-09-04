@@ -291,12 +291,15 @@ def eval_epoch(val_loader, model, val_meter, cur_epoch, cfg, writer=None):
                     global_step=cur_epoch,
                 )
 
-                figure, precision, recall, f1 = football.get_figure_metrics(preds=all_preds,
-                                                                            labels=all_labels)
+                figure, precision, recall, f1, auc_pr_random, auc_pr, cohen_kappa = football.get_figure_metrics(preds=all_preds,
+                                                                                                                labels=all_labels)
                 writer.add_scalars(
                     {'Val/precision': precision,
                      'Val/recall': recall,
-                     'Val/f1': f1},
+                     'Val/f1': f1,
+                     'Val/Random AUC-PR': auc_pr_random,
+                     'Val/AUC-PR': auc_pr,
+                     'Val/Cohen Kappa': cohen_kappa},
                     global_step=cur_epoch
                 )
                 writer.writer.add_figure(tag='Confusion Matrix Unnormalized', figure=figure, global_step=cur_epoch)
