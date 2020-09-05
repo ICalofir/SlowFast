@@ -311,7 +311,8 @@ def eval_epoch(val_loader, model, val_meter, cur_epoch, cfg, writer=None):
                     writer.add_scalars(
                         {'Val/precision/{}'.format(class_name): precision[class_name_idx],
                          'Val/recall/{}'.format(class_name): recall[class_name_idx],
-                         'Val/f1/{}'.format(class_name): f1[class_name_idx]}
+                         'Val/f1/{}'.format(class_name): f1[class_name_idx]},
+                        global_step=cur_epoch
                     )
                 writer.writer.add_figure(tag='Confusion Matrix Unnormalized', figure=figure, global_step=cur_epoch)
 

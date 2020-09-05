@@ -154,9 +154,10 @@ def perform_test(test_loader, model, test_meter, cfg, writer=None):
                     writer.add_scalars(
                         {'Test/precision/{}'.format(class_name): precision[class_name_idx],
                          'Test/recall/{}'.format(class_name): recall[class_name_idx],
-                         'Test/f1/{}'.format(class_name): f1[class_name_idx]}
+                         'Test/f1/{}'.format(class_name): f1[class_name_idx]},
+                        global_step=0
                     )
-                writer.writer.add_figure(tag='Confusion Matrix Unnormalized', figure=figure, global_step=cur_epoch)
+                writer.writer.add_figure(tag='Confusion Matrix Unnormalized', figure=figure, global_step=0)
 
         if cfg.TEST.SAVE_RESULTS_PATH != "":
             save_path = os.path.join(cfg.OUTPUT_DIR, cfg.TEST.SAVE_RESULTS_PATH)
