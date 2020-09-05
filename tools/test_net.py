@@ -146,6 +146,17 @@ def perform_test(test_loader, model, test_meter, cfg, writer=None):
                     global_step=0
                 )
                 writer.writer.add_figure(tag='Confusion Matrix Unnormalized', figure=figure, global_step=0)
+            else:
+                figure, precision, recall, f1 = football.get_figure_metrics_video_recognition(preds=all_preds,
+                                                                                              labels=all_labels)
+                class_names = ['no_action', 'pass', 'shot']
+                for class_name_idx, class_name in enumerate(class_names):
+                    writer.add_scalars(
+                        {'Test/precision/{}'.format(class_name): precision[class_name_idx],
+                         'Test/recall/{}'.format(class_name): recall[class_name_idx],
+                         'Test/f1/{}'.format(class_name): f1[class_name_idx]}
+                    )
+                writer.writer.add_figure(tag='Confusion Matrix Unnormalized', figure=figure, global_step=cur_epoch)
 
         if cfg.TEST.SAVE_RESULTS_PATH != "":
             save_path = os.path.join(cfg.OUTPUT_DIR, cfg.TEST.SAVE_RESULTS_PATH)

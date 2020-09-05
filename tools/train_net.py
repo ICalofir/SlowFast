@@ -303,6 +303,17 @@ def eval_epoch(val_loader, model, val_meter, cur_epoch, cfg, writer=None):
                     global_step=cur_epoch
                 )
                 writer.writer.add_figure(tag='Confusion Matrix Unnormalized', figure=figure, global_step=cur_epoch)
+            else:
+                figure, precision, recall, f1 = football.get_figure_metrics_video_recognition(preds=all_preds,
+                                                                                              labels=all_labels)
+                class_names = ['no_action', 'pass', 'shot']
+                for class_name_idx, class_name in enumerate(class_names):
+                    writer.add_scalars(
+                        {'Val/precision/{}'.format(class_name): precision[class_name_idx],
+                         'Val/recall/{}'.format(class_name): recall[class_name_idx],
+                         'Val/f1/{}'.format(class_name): f1[class_name_idx]}
+                    )
+                writer.writer.add_figure(tag='Confusion Matrix Unnormalized', figure=figure, global_step=cur_epoch)
 
     val_meter.reset()
 
