@@ -78,7 +78,7 @@ def run_visualization(vis_loader, model, cfg, writer=None):
         )
     logger.info("Finish drawing weights.")
     global_idx = -1
-    for inputs, labels, _, meta in tqdm.tqdm(vis_loader):
+    for inputs, labels, vid_idx, meta in tqdm.tqdm(vis_loader):
         if cfg.NUM_GPUS:
             # Transfer the data to the current GPU device.
             if isinstance(inputs, (list,)):
@@ -172,10 +172,11 @@ def run_visualization(vis_loader, model, cfg, writer=None):
                                 .permute(0, 3, 1, 2)
                                 .unsqueeze(0)
                             )
+                            vid_name = '/'.join(vis_loader.dataset._path_to_videos[vid_idx[cur_batch_idx].item()].split('/')[-2:])
                             writer.add_video(
                                 video,
-                                tag="Input {}/Pathway {}".format(
-                                    global_idx, path_idx + 1
+                                tag="Input {}/Pathway {}/Video Name {}".format(
+                                    global_idx, path_idx + 1, vid_name
                                 ),
                             )
                     if cfg.TENSORBOARD.MODEL_VIS.ACTIVATIONS:
